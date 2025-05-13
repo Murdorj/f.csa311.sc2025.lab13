@@ -1,48 +1,62 @@
 package AndrewWebServices;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class AndrewWebServicesTest {
-    Database database;
-    RecSys recommender;
-    PromoService promoService;
+
+    Database fakeDatabase;
+    RecSys stubRecommender;
+    PromoService mockPromoService;
     AndrewWebServices andrewWebService;
 
     @Before
     public void setUp() {
-        // You need to use some mock objects here
-        database = new Database(); // We probably don't want to access our real database...
-        recommender = new RecSys();
-        promoService = new PromoService();
+        // Fake: for database
+        fakeDatabase = mock(Database.class);
+        when(fakeDatabase.getPassword("Scotty")).thenReturn(17214);
 
-        andrewWebService = new AndrewWebServices(database, recommender, promoService);
+        // Stub: for recommendation system
+        stubRecommender = mock(RecSys.class);
+        when(stubRecommender.getRecommendation("Scotty")).thenReturn("Animal House");
+
+        // Mock: for promotional service
+        mockPromoService = mock(PromoService.class);
+
+        andrewWebService = new AndrewWebServices(fakeDatabase, stubRecommender, mockPromoService);
     }
 
     @Test
     public void testLogIn() {
-        // This is taking way too long to test
+        // No delay; uses fake password
         assertTrue(andrewWebService.logIn("Scotty", 17214));
     }
 
     @Test
     public void testGetRecommendation() {
-        // This is taking way too long to test
+        // Stubbed to return immediately
         assertEquals("Animal House", andrewWebService.getRecommendation("Scotty"));
     }
 
     @Test
     public void testSendEmail() {
-        // How should we test sendEmail() when it doesn't have a return value?
-        // Hint: is there something from Mockito that seems useful here?
+        // Trigger sending promo email
+        andrewWebService.sendPromoEmail("test@example.com");
+
+        // Verify that promoService.mailTo() was called with the correct email
+        verify(mockPromoService, times(1)).mailTo("test@example.com");
     }
 
     @Test
     public void testNoSendEmail() {
-        // How should we test that no email has been sent in certain situations (like right after logging in)?
-        // Hint: is there something from Mockito that seems useful here?
+        // No email should be sent when we only log in
+        andrewWebService.logIn("Scotty", 17214);
+
+        // Verify that promoService.mailTo() was never called
+        verify(mockPromoService, never()).mailTo(anyString());
     }
 }
